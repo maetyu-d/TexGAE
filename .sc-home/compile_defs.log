@@ -1,0 +1,17 @@
+compiling class library...
+	Found 745 primitives.
+	Compiling directory '/tmp/supercollider/SCClassLibrary'
+	numentries = 856274 / 12689300 = 0.067
+	5590 method selectors, 2270 classes
+	method table size 13574352 bytes, big table size 101514400
+	Number of Symbols 12554
+	Byte Code Size 398628
+	compiled 331 files in 0.18 seconds
+compile done
+localhost : setting clientID to 0.
+internal : setting clientID to 0.
+Class tree inited in 0.01 seconds
+
+
+*** Welcome to SuperCollider 3.15.0-dev. *** For help type cmd-d.
+Wrote SynthDefs to: /Users/md/Downloads/game audio engine/SuperCollider/defs
