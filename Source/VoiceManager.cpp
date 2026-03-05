@@ -123,6 +123,11 @@ void VoiceManager::stopAll(int releaseMs)
         stopEvent(eventId, releaseMs);
 }
 
+bool VoiceManager::hasEvent(const juce::String& eventId) const
+{
+    return byEventId.find(eventId) != byEventId.end();
+}
+
 void VoiceManager::onNodeEnded(int nodeId)
 {
     const auto it = byNodeId.find(nodeId);

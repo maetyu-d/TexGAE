@@ -42,6 +42,7 @@ public:
 
     bool stopEvent(const juce::String& eventId, int releaseMs);
     void stopAll(int releaseMs);
+    bool hasEvent(const juce::String& eventId) const;
     void onNodeEnded(int nodeId);
 
     int getActiveVoiceCount() const noexcept;

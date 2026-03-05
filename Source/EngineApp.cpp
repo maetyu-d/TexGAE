@@ -85,7 +85,7 @@ void EngineApp::initialise(const juce::String& /*commandLine*/)
 {
     auto ui = std::make_unique<MainComponent>(
         [this] { createTestScene(); },
-        [this] (const juce::String& synthName, float gain) { spawnTestEvent(synthName, gain); },
+        [this] (const juce::String& incomingEvent, const juce::String& synthName, float gain) { toggleRowTestEvent(incomingEvent, synthName, gain); },
         [this] { stopLastTestEvent(); },
         [this] { return getStatusText(); },
         [this] (const juce::String& incomingEvent,
@@ -103,6 +103,7 @@ void EngineApp::initialise(const juce::String& /*commandLine*/)
         [this] { return getMappingRules(); },
         [this] { return getAvailableSynthDefs(); },
         [this] { return getRecentEventTimes(); },
+        [this] { return getRowTestActiveStates(); },
         [this] { saveMappingConfig(); },
         [this] { loadMappingConfig(); });
     window = std::make_unique<MainWindow>(std::move(ui));
@@ -127,7 +128,8 @@ void EngineApp::initialise(const juce::String& /*commandLine*/)
     }
 
     setupScGraph();
-    synthDefCatalog = { "proc_hit", "footstep", "impact", "ui_blip", "wind_loop", "ambience_grain", "music_pulse" };
+    synthDefCatalog = { "proc_hit", "footstep", "impact", "ui_blip", "wind_loop", "ambience_grain", "music_pulse",
+                        "ui_click", "laser_zap", "explosion", "pickup_chime", "whoosh", "engine_idle", "rain_loop", "alarm_loop" };
     refreshSynthDefCatalogFromDisk();
     ensureDefaultMappings();
 
@@ -431,6 +433,40 @@ void EngineApp::spawnTestEvent(const juce::String& synthName, float gain)
     }
 }
 
+void EngineApp::toggleRowTestEvent(const juce::String& incomingEvent, const juce::String& synthName, float gain)
+{
+    createTestScene();
+
+    const auto done = sc->getLastOscDone();
+    if (! (done.contains("/d_load") || done.contains("/d_recv")))
+    {
+        setupScGraph();
+        lastUiError = "loading SynthDefs, press Test again";
+        return;
+    }
+
+    auto eventId = rowTestEventIdByIncoming[incomingEvent];
+    if (eventId.isEmpty())
+        eventId = "__rowtest__" + incomingEvent;
+
+    if (voices->hasEvent(eventId))
+    {
+        voices->stopEvent(eventId, 80);
+        rowTestEventIdByIncoming[incomingEvent] = eventId;
+        return;
+    }
+
+    const auto now = juce::Time::getMillisecondCounterHiRes();
+    const auto spawned = voices->spawnEvent(testSceneId, synthName, eventId, 0.0f, 0.0f, 0.0f, gain, 1234, now);
+    if (! spawned)
+    {
+        lastUiError = "spawn failed for SynthDef: " + synthName;
+        return;
+    }
+
+    rowTestEventIdByIncoming[incomingEvent] = eventId;
+}
+
 void EngineApp::stopLastTestEvent()
 {
     if (lastTestEventId.isNotEmpty())
@@ -471,6 +507,17 @@ std::vector<juce::String> EngineApp::getAvailableSynthDefs() const
 std::map<juce::String, double> EngineApp::getRecentEventTimes() const
 {
     return recentEventTimesMs;
+}
+
+std::map<juce::String, bool> EngineApp::getRowTestActiveStates() const
+{
+    std::map<juce::String, bool> active;
+    for (const auto& [incoming, eventId] : rowTestEventIdByIncoming)
+    {
+        if (eventId.isNotEmpty())
+            active[incoming] = voices->hasEvent(eventId);
+    }
+    return active;
 }
 
 void EngineApp::applyBusGain(const juce::String& busName, float gainDb)
@@ -536,8 +583,70 @@ void EngineApp::ensureDefaultMappings()
         r.defaultSend = -1.0f;
         r.timedReleaseMs = 220;
         r.enabled = true;
+        r.notes = "General";
 
-        if (synth == "proc_hit" || synth == "footstep" || synth == "impact" || synth == "ui_blip")
+        if (synth == "proc_hit") r.notes = "Impact: generic procedural hit";
+        if (synth == "footstep") r.notes = "Foley: footsteps";
+        if (synth == "impact") r.notes = "Combat/physics impact";
+        if (synth == "explosion")
+        {
+            r.notes = "Combat: explosion one-shot";
+            r.defaultSend = 0.30f;
+            r.timedReleaseMs = 520;
+        }
+
+        if (synth == "ui_blip") r.notes = "UI: short confirmation blip";
+        if (synth == "ui_click") r.notes = "UI: very short button click";
+        if (synth == "pickup_chime")
+        {
+            r.notes = "UI/gameplay: pickup/reward chime";
+            r.defaultSend = 0.18f;
+            r.timedReleaseMs = 380;
+        }
+
+        if (synth == "laser_zap") r.notes = "Weapon: sci-fi zap";
+        if (synth == "whoosh")
+        {
+            r.notes = "Motion: pass-by / whoosh";
+            r.defaultSend = 0.22f;
+            r.timedReleaseMs = 340;
+        }
+
+        if (synth == "wind_loop")
+        {
+            r.notes = "Ambience: wind bed (loop)";
+            r.defaultSend = 0.25f;
+        }
+        if (synth == "rain_loop")
+        {
+            r.notes = "Ambience: rain bed (loop)";
+            r.defaultSend = 0.24f;
+        }
+        if (synth == "ambience_grain")
+        {
+            r.notes = "Ambience: granular texture (loop)";
+            r.defaultSend = 0.20f;
+        }
+
+        if (synth == "engine_idle")
+        {
+            r.notes = "Vehicle: engine idle loop";
+            r.defaultSend = 0.16f;
+        }
+        if (synth == "alarm_loop")
+        {
+            r.notes = "Alert: alarm/siren loop";
+            r.defaultSend = 0.12f;
+        }
+        if (synth == "music_pulse")
+        {
+            r.notes = "Music: rhythmic pulse";
+            r.defaultSend = 0.15f;
+        }
+
+        if (synth == "proc_hit" || synth == "footstep" || synth == "impact" || synth == "ui_blip"
+            || synth == "ui_click" || synth == "laser_zap" || synth == "explosion"
+            || synth == "pickup_chime" || synth == "whoosh")
             r.behavior = EventRule::Behavior::oneShot;
         else if (synth == "music_pulse")
             r.behavior = EventRule::Behavior::timedRelease;

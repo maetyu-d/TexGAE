@@ -14,7 +14,7 @@ class MainComponent : public juce::Component,
 {
 public:
     MainComponent(std::function<void()> onCreateScene,
-                  std::function<void(const juce::String&, float)> onSpawn,
+                  std::function<void(const juce::String&, const juce::String&, float)> onToggleRowTest,
                   std::function<void()> onStop,
                   std::function<juce::String()> getStatus,
                   std::function<void(const juce::String&,
@@ -29,6 +29,7 @@ public:
                   std::function<std::vector<EventRule>()> getRules,
                   std::function<std::vector<juce::String>()> getSynthDefs,
                   std::function<std::map<juce::String, double>()> getRecentEventTimes,
+                  std::function<std::map<juce::String, bool>()> getRowTestActiveStates,
                   std::function<void()> onSaveConfig,
                   std::function<void()> onLoadConfig);
 
@@ -64,7 +65,7 @@ private:
     static juce::String behaviorName(EventRule::Behavior b);
 
     std::function<void()> onCreateScene;
-    std::function<void(const juce::String&, float)> onSpawn;
+    std::function<void(const juce::String&, const juce::String&, float)> onToggleRowTest;
     std::function<void()> onStop;
     std::function<juce::String()> getStatus;
     std::function<void(const juce::String&, const juce::String&, int, float, float, int, bool, const juce::String&)> onUpsertMapping;
@@ -72,6 +73,7 @@ private:
     std::function<std::vector<EventRule>()> getRules;
     std::function<std::vector<juce::String>()> getSynthDefs;
     std::function<std::map<juce::String, double>()> getRecentEventTimes;
+    std::function<std::map<juce::String, bool>()> getRowTestActiveStates;
     std::function<void()> onSaveConfig;
     std::function<void()> onLoadConfig;
 
@@ -102,5 +104,6 @@ private:
 
     std::vector<EventRule> rulesCache;
     std::map<juce::String, double> recentEventTimesMs;
+    std::map<juce::String, bool> rowTestActiveByIncoming;
 };
 } // namespace gae

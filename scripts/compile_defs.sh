@@ -14,6 +14,14 @@ EXPECTED_DEFS=(
   "wind_loop"
   "ambience_grain"
   "music_pulse"
+  "ui_click"
+  "laser_zap"
+  "explosion"
+  "pickup_chime"
+  "whoosh"
+  "engine_idle"
+  "rain_loop"
+  "alarm_loop"
 )
 
 if [[ ! -x "$SCLANG_BIN" ]]; then

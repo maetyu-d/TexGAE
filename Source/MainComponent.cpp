@@ -12,7 +12,7 @@ public:
 } // namespace
 
 MainComponent::MainComponent(std::function<void()> createScene,
-                             std::function<void(const juce::String&, float)> spawn,
+                             std::function<void(const juce::String&, const juce::String&, float)> toggleRowTest,
                              std::function<void()> stop,
                              std::function<juce::String()> statusFn,
                              std::function<void(const juce::String&, const juce::String&, int, float, float, int, bool, const juce::String&)> upsertMapping,
@@ -20,10 +20,11 @@ MainComponent::MainComponent(std::function<void()> createScene,
                              std::function<std::vector<EventRule>()> getRulesFn,
                              std::function<std::vector<juce::String>()> getSynthDefsFn,
                              std::function<std::map<juce::String, double>()> getRecentEventTimesFn,
+                             std::function<std::map<juce::String, bool>()> getRowTestActiveStatesFn,
                              std::function<void()> saveConfigFn,
                              std::function<void()> loadConfigFn)
     : onCreateScene(std::move(createScene)),
-      onSpawn(std::move(spawn)),
+      onToggleRowTest(std::move(toggleRowTest)),
       onStop(std::move(stop)),
       getStatus(std::move(statusFn)),
       onUpsertMapping(std::move(upsertMapping)),
@@ -31,6 +32,7 @@ MainComponent::MainComponent(std::function<void()> createScene,
       getRules(std::move(getRulesFn)),
       getSynthDefs(std::move(getSynthDefsFn)),
       getRecentEventTimes(std::move(getRecentEventTimesFn)),
+      getRowTestActiveStates(std::move(getRowTestActiveStatesFn)),
       onSaveConfig(std::move(saveConfigFn)),
       onLoadConfig(std::move(loadConfigFn))
 {
@@ -254,6 +256,8 @@ void MainComponent::timerCallback()
 
     if (getRecentEventTimes)
         recentEventTimesMs = getRecentEventTimes();
+    if (getRowTestActiveStates)
+        rowTestActiveByIncoming = getRowTestActiveStates();
 
     refreshRules();
 }
@@ -322,11 +326,20 @@ juce::Component* MainComponent::refreshComponentForCell(int rowNumber,
     if (button == nullptr)
     {
         button = new RowTestButton();
-        button->setButtonText("Test");
         button->onClick = [this, button] { testMappingRow(button->row); };
     }
 
     button->row = rowNumber;
+    if (rowNumber >= 0 && rowNumber < static_cast<int> (rulesCache.size()))
+    {
+        const auto& incoming = rulesCache[static_cast<size_t> (rowNumber)].incomingEvent;
+        const auto it = rowTestActiveByIncoming.find(incoming);
+        const bool isActive = (it != rowTestActiveByIncoming.end()) && it->second;
+        button->setButtonText(isActive ? "Stop" : "Test");
+        button->setColour(juce::TextButton::buttonColourId,
+                          isActive ? juce::Colours::indianred.withAlpha(0.8f)
+                                   : juce::Colours::darkslategrey.withAlpha(0.8f));
+    }
     return button;
 }
 
@@ -372,12 +385,12 @@ void MainComponent::testMappingRow(int row)
     if (row < 0 || row >= static_cast<int> (rulesCache.size()))
         return;
 
-    if (! onSpawn)
+    if (! onToggleRowTest)
         return;
 
     const auto& r = rulesCache[static_cast<size_t> (row)];
     const auto testGain = juce::jlimit(0.05f, 1.0f, 0.25f * r.gainScale);
-    onSpawn(r.synthDef, testGain);
+    onToggleRowTest(r.incomingEvent, r.synthDef, testGain);
 }
 
 juce::String MainComponent::behaviorName(EventRule::Behavior b)
