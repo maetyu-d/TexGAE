@@ -176,8 +176,16 @@ void ScServerClient::oscMessageReceived(const juce::OSCMessage& message)
 
     if (addr == "/fail")
     {
+        const auto command = argToString(message, 0);
+        const auto reason = argToString(message, 1);
+
+        const bool benignNotFound = reason.containsIgnoreCase("not found")
+                                 && (reason.containsIgnoreCase("node") || reason.containsIgnoreCase("group"));
+        if (benignNotFound)
+            return;
+
         const juce::ScopedLock lock(stateLock);
-        lastOscFailure = argToString(message, 0) + ": " + argToString(message, 1);
+        lastOscFailure = command + ": " + reason;
         return;
     }
 

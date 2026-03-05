@@ -132,7 +132,13 @@ void EngineApp::initialise(const juce::String& /*commandLine*/)
 
     setupScGraph();
     synthDefCatalog = { "proc_hit", "footstep", "impact", "ui_blip", "wind_loop", "ambience_grain", "music_pulse",
-                        "ui_click", "laser_zap", "explosion", "pickup_chime", "whoosh", "engine_idle", "rain_loop", "alarm_loop" };
+                        "ui_click", "laser_zap", "explosion", "pickup_chime", "whoosh", "engine_idle", "rain_loop", "alarm_loop",
+                        "gunshot", "jump_blip", "coin_pickup", "error_buzz", "powerup_swirl", "door_thud", "thunder_rumble", "magic_cast",
+                        "rifle_shot", "shotgun_blast", "smg_burst", "ricochet_ping", "sword_clash", "bow_release", "reload_click",
+                        "rocket_launcher_blast", "pedestrians_loop", "phone_tone", "dtmf_tone", "siren_wail", "telephone_bell",
+                        "bouncing_ball", "rolling_can", "creaking_door", "boing_spring", "fire_loop", "bubbles_loop",
+                        "running_water", "electricity_arc", "motor_loop", "car_passby", "insects_loop", "transporter_beam",
+                        "red_alert_loop", "r2d2_bleeps", "additive_pad" };
     refreshSynthDefCatalogFromDisk();
     ensureDefaultMappings();
 
@@ -611,12 +617,69 @@ void EngineApp::ensureDefaultMappings()
         }
 
         if (synth == "laser_zap") r.notes = "Weapon: sci-fi zap";
+        if (synth == "gunshot") r.notes = "Weapon: gunshot one-shot";
+        if (synth == "rifle_shot") r.notes = "Weapon: rifle shot";
+        if (synth == "shotgun_blast")
+        {
+            r.notes = "Weapon: shotgun blast";
+            r.defaultSend = 0.24f;
+        }
+        if (synth == "smg_burst") r.notes = "Weapon: SMG burst";
+        if (synth == "ricochet_ping")
+        {
+            r.notes = "Weapon: ricochet ping";
+            r.defaultSend = 0.16f;
+        }
+        if (synth == "sword_clash")
+        {
+            r.notes = "Weapon: sword clash";
+            r.defaultSend = 0.18f;
+        }
+        if (synth == "bow_release") r.notes = "Weapon: bow release";
+        if (synth == "reload_click") r.notes = "Weapon: reload click";
+        if (synth == "rocket_launcher_blast")
+        {
+            r.notes = "Weapon: rocket launcher blast";
+            r.defaultSend = 0.35f;
+            r.timedReleaseMs = 1400;
+        }
+        if (synth == "pedestrians_loop") r.notes = "Wikibooks: pedestrians";
+        if (synth == "phone_tone") r.notes = "Wikibooks: phone tone";
+        if (synth == "dtmf_tone") r.notes = "Wikibooks: DTMF";
+        if (synth == "siren_wail") r.notes = "Wikibooks: siren";
+        if (synth == "telephone_bell") r.notes = "Wikibooks: telephone bell";
+        if (synth == "bouncing_ball") r.notes = "Wikibooks: bouncing ball";
+        if (synth == "rolling_can") r.notes = "Wikibooks: rolling can";
+        if (synth == "creaking_door") r.notes = "Wikibooks: creaking door";
+        if (synth == "boing_spring") r.notes = "Wikibooks: boing";
+        if (synth == "fire_loop") r.notes = "Wikibooks: fire";
+        if (synth == "bubbles_loop") r.notes = "Wikibooks: bubbles";
+        if (synth == "running_water") r.notes = "Wikibooks: running water";
+        if (synth == "electricity_arc") r.notes = "Wikibooks: electricity";
+        if (synth == "motor_loop") r.notes = "Wikibooks: motor";
+        if (synth == "car_passby") r.notes = "Wikibooks: car";
+        if (synth == "insects_loop") r.notes = "Wikibooks: insects";
+        if (synth == "transporter_beam")
+        {
+            r.notes = "Wikibooks: transporter";
+            r.defaultSend = 0.24f;
+        }
+        if (synth == "red_alert_loop") r.notes = "Wikibooks: red alert";
+        if (synth == "r2d2_bleeps") r.notes = "Wikibooks: R2D2-style bleeps";
+        if (synth == "additive_pad")
+        {
+            r.notes = "Wikibooks: additive synthesis pad";
+            r.defaultSend = 0.2f;
+        }
+        if (synth == "jump_blip") r.notes = "Player: jump cue";
         if (synth == "whoosh")
         {
             r.notes = "Motion: pass-by / whoosh";
             r.defaultSend = 0.22f;
             r.timedReleaseMs = 340;
         }
+        if (synth == "door_thud") r.notes = "World: door/physics thud";
+        if (synth == "magic_cast") r.notes = "Ability: magic cast";
 
         if (synth == "wind_loop")
         {
@@ -644,15 +707,37 @@ void EngineApp::ensureDefaultMappings()
             r.notes = "Alert: alarm/siren loop";
             r.defaultSend = 0.12f;
         }
+        if (synth == "thunder_rumble")
+        {
+            r.notes = "Weather: thunder rumble";
+            r.defaultSend = 0.35f;
+            r.timedReleaseMs = 1200;
+        }
         if (synth == "music_pulse")
         {
             r.notes = "Music: rhythmic pulse";
             r.defaultSend = 0.15f;
         }
+        if (synth == "coin_pickup") r.notes = "Gameplay: coin pickup";
+        if (synth == "error_buzz") r.notes = "UI/system: error buzz";
+        if (synth == "powerup_swirl")
+        {
+            r.notes = "Gameplay: power-up swirl";
+            r.defaultSend = 0.2f;
+            r.timedReleaseMs = 700;
+        }
 
         if (synth == "proc_hit" || synth == "footstep" || synth == "impact" || synth == "ui_blip"
             || synth == "ui_click" || synth == "laser_zap" || synth == "explosion"
-            || synth == "pickup_chime" || synth == "whoosh")
+            || synth == "pickup_chime" || synth == "whoosh" || synth == "gunshot"
+            || synth == "jump_blip" || synth == "coin_pickup" || synth == "error_buzz"
+            || synth == "powerup_swirl" || synth == "door_thud" || synth == "thunder_rumble"
+            || synth == "magic_cast" || synth == "rifle_shot" || synth == "shotgun_blast"
+            || synth == "smg_burst" || synth == "ricochet_ping" || synth == "sword_clash"
+            || synth == "bow_release" || synth == "reload_click" || synth == "rocket_launcher_blast"
+            || synth == "dtmf_tone" || synth == "telephone_bell" || synth == "bouncing_ball"
+            || synth == "rolling_can" || synth == "creaking_door" || synth == "boing_spring"
+            || synth == "car_passby" || synth == "transporter_beam" || synth == "r2d2_bleeps")
             r.behavior = EventRule::Behavior::oneShot;
         else if (synth == "music_pulse")
             r.behavior = EventRule::Behavior::timedRelease;
