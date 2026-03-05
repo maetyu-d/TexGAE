@@ -1,4 +1,4 @@
-# Game Audio Engine (JUCE + scsynth)
+# Tiny experimental Game Audio Engine
 
 Concrete "lightweight but deep" starter architecture with multi-engine control clients:
 
