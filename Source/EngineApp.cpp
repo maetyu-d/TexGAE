@@ -120,6 +120,9 @@ void EngineApp::initialise(const juce::String& /*commandLine*/)
     if (! sc->start())
     {
         startupError = "Failed to start scsynth at: " + config.scsynthExecutable;
+        const auto reason = sc->getStartError();
+        if (reason.isNotEmpty())
+            startupError << " (" << reason << ")";
     }
 
     if (! router->start(config.unrealRecvPort, config.unrealHost, config.unrealReplyPort))
@@ -164,6 +167,14 @@ void EngineApp::shutdown()
 
     if (sc)
         sc->stop();
+
+    // Hard fallback to prevent orphaned audio if a detached scsynth remains alive.
+    juce::ChildProcess killAll;
+    juce::StringArray killArgs;
+    killArgs.add("killall");
+    killArgs.add("scsynth");
+    killAll.start(killArgs);
+    killAll.waitForProcessToFinish(300);
 
     sc.reset();
     scheduler.reset();
@@ -273,12 +284,7 @@ void EngineApp::handleOsc(const juce::OSCMessage& message)
 
             if (hasRule && rule.enabled)
             {
-                if (rule.behavior == EventRule::Behavior::oneShot)
-                {
-                    const auto releaseMs = (rule.timedReleaseMs > 0) ? rule.timedReleaseMs : 140;
-                    scheduler->scheduleIn(releaseMs, [this, eventId, releaseMs] { voices->stopEvent(eventId, releaseMs); });
-                }
-                else if (rule.behavior == EventRule::Behavior::timedRelease)
+                if (rule.behavior == EventRule::Behavior::timedRelease)
                 {
                     const auto releaseMs = juce::jmax(10, rule.timedReleaseMs);
                     scheduler->scheduleIn(releaseMs, [this, eventId, releaseMs] { voices->stopEvent(eventId, releaseMs); });

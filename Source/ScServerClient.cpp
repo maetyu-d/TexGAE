@@ -42,17 +42,41 @@ ScServerClient::~ScServerClient()
 
 bool ScServerClient::start()
 {
+    {
+        const juce::ScopedLock lock(stateLock);
+        lastStartError.clear();
+    }
+
     if (! launchScsynth())
-        return false;
+    {
+        const juce::ScopedLock lock(stateLock);
+        lastStartError = "launchScsynth failed (continuing in connect-only mode)";
+    }
 
     if (! sharedSocket.bindToPort(config.scReplyPort))
-        return false;
+    {
+        // Fallback: use any free ephemeral UDP port instead of failing startup.
+        if (! sharedSocket.bindToPort(0))
+        {
+            const juce::ScopedLock lock(stateLock);
+            lastStartError = "failed to bind reply UDP port";
+            return false;
+        }
+    }
 
     if (! connectToSocket(sharedSocket))
+    {
+        const juce::ScopedLock lock(stateLock);
+        lastStartError = "failed to attach OSC receiver socket";
         return false;
+    }
 
     if (! sender.connectToSocket(sharedSocket, config.scHost, config.scPort))
+    {
+        const juce::ScopedLock lock(stateLock);
+        lastStartError = "failed to connect OSC sender socket";
         return false;
+    }
 
     addListener(this);
     connected.store(true);
@@ -132,6 +156,12 @@ juce::String ScServerClient::getLastOscDone() const
 {
     const juce::ScopedLock lock(stateLock);
     return lastOscDone;
+}
+
+juce::String ScServerClient::getStartError() const
+{
+    const juce::ScopedLock lock(stateLock);
+    return lastStartError;
 }
 
 void ScServerClient::oscMessageReceived(const juce::OSCMessage& message)

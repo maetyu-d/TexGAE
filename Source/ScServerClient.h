@@ -27,6 +27,7 @@ public:
     juce::String drainProcessOutput();
     juce::String getLastOscFailure() const;
     juce::String getLastOscDone() const;
+    juce::String getStartError() const;
 
     std::function<void(int nodeId)> onNodeEnded;
 
@@ -42,6 +43,7 @@ private:
     std::atomic<bool> booted { false };
     juce::String lastOscFailure;
     juce::String lastOscDone;
+    juce::String lastStartError;
     mutable juce::CriticalSection stateLock;
 };
 } // namespace gae
