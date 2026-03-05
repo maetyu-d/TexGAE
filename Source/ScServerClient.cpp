@@ -61,6 +61,13 @@ bool ScServerClient::start()
 
 void ScServerClient::stop()
 {
+    if (connected.load())
+    {
+        juce::OSCMessage quit("/quit");
+        sender.send(quit);
+        juce::Thread::sleep(30);
+    }
+
     connected.store(false);
     booted.store(false);
 

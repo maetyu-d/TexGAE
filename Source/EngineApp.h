@@ -67,6 +67,7 @@ private:
     juce::String getStatusText() const;
     std::vector<EventRule> getMappingRules() const;
     std::vector<juce::String> getAvailableSynthDefs() const;
+    std::map<juce::String, double> getRecentEventTimes() const;
     void ensureDefaultMappings();
     void refreshSynthDefCatalogFromDisk();
     void saveMappingConfig();
@@ -85,6 +86,7 @@ private:
     std::map<juce::String, float> busDbByName;
     std::map<juce::String, std::map<juce::String, float>> snapshots;
     std::vector<juce::String> synthDefCatalog;
+    std::map<juce::String, double> recentEventTimesMs;
     EventMappingManager mappings;
     int testSceneId { -1 };
     juce::String lastTestEventId;

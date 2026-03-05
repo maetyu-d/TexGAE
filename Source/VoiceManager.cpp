@@ -112,6 +112,17 @@ bool VoiceManager::stopEvent(const juce::String& eventId, int releaseMs)
     return true;
 }
 
+void VoiceManager::stopAll(int releaseMs)
+{
+    std::vector<juce::String> eventIds;
+    eventIds.reserve(byEventId.size());
+    for (const auto& [eventId, _] : byEventId)
+        eventIds.push_back(eventId);
+
+    for (const auto& eventId : eventIds)
+        stopEvent(eventId, releaseMs);
+}
+
 void VoiceManager::onNodeEnded(int nodeId)
 {
     const auto it = byNodeId.find(nodeId);

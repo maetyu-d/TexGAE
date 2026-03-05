@@ -3,6 +3,7 @@
 #include "EventMappingManager.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <map>
 
 namespace gae
 {
@@ -27,6 +28,7 @@ public:
                   std::function<void(const juce::String&)> onRemoveMapping,
                   std::function<std::vector<EventRule>()> getRules,
                   std::function<std::vector<juce::String>()> getSynthDefs,
+                  std::function<std::map<juce::String, double>()> getRecentEventTimes,
                   std::function<void()> onSaveConfig,
                   std::function<void()> onLoadConfig);
 
@@ -38,6 +40,7 @@ private:
         colEnabled = 1,
         colIncoming,
         colSynth,
+        colRx,
         colTest,
         colBehavior,
         colGainScale,
@@ -68,6 +71,7 @@ private:
     std::function<void(const juce::String&)> onRemoveMapping;
     std::function<std::vector<EventRule>()> getRules;
     std::function<std::vector<juce::String>()> getSynthDefs;
+    std::function<std::map<juce::String, double>()> getRecentEventTimes;
     std::function<void()> onSaveConfig;
     std::function<void()> onLoadConfig;
 
@@ -78,7 +82,6 @@ private:
     juce::Slider gain;
 
     juce::TextButton createSceneButton { "Create Test Scene" };
-    juce::TextButton spawnButton { "Spawn Test Event" };
     juce::TextButton stopButton { "Stop Last Event" };
 
     juce::Label mappingHeader;
@@ -98,5 +101,6 @@ private:
     juce::TextButton loadConfigButton { "Load Config" };
 
     std::vector<EventRule> rulesCache;
+    std::map<juce::String, double> recentEventTimesMs;
 };
 } // namespace gae

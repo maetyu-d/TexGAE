@@ -102,6 +102,7 @@ void EngineApp::initialise(const juce::String& /*commandLine*/)
         [this] (const juce::String& incomingEvent) { removeMappingRule(incomingEvent); },
         [this] { return getMappingRules(); },
         [this] { return getAvailableSynthDefs(); },
+        [this] { return getRecentEventTimes(); },
         [this] { saveMappingConfig(); },
         [this] { loadMappingConfig(); });
     window = std::make_unique<MainWindow>(std::move(ui));
@@ -138,6 +139,23 @@ void EngineApp::shutdown()
     stopTimer();
 
     router.reset();
+
+    if (voices)
+        voices->stopAll(30);
+
+    if (sc && sc->isConnected())
+    {
+        juce::OSCMessage freeAll("/g_freeAll");
+        freeAll.addInt32(0);
+        sc->send(freeAll);
+
+        juce::OSCMessage clearSched("/clearSched");
+        sc->send(clearSched);
+    }
+
+    // Give scsynth a brief chance to process release/free messages before teardown.
+    juce::Thread::sleep(40);
+
     window.reset();
     voices.reset();
     scenes.reset();
@@ -235,6 +253,7 @@ void EngineApp::handleOsc(const juce::OSCMessage& message)
         const auto z = argToFloat(message, 5, 0.0f);
         const auto gain = argToFloat(message, 6, 0.8f);
         const auto seed = argToInt(message, 7, 0);
+        recentEventTimesMs[eventType] = juce::Time::getMillisecondCounterHiRes();
 
         scheduler->scheduleIn(scheduler->getLookaheadMs(), [this, sceneId, eventType, eventId, x, y, z, gain, seed]
         {
@@ -447,6 +466,11 @@ std::vector<EventRule> EngineApp::getMappingRules() const { return mappings.getR
 std::vector<juce::String> EngineApp::getAvailableSynthDefs() const
 {
     return synthDefCatalog;
+}
+
+std::map<juce::String, double> EngineApp::getRecentEventTimes() const
+{
+    return recentEventTimesMs;
 }
 
 void EngineApp::applyBusGain(const juce::String& busName, float gainDb)

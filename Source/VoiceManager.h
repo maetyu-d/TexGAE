@@ -41,6 +41,7 @@ public:
                     int rampMs);
 
     bool stopEvent(const juce::String& eventId, int releaseMs);
+    void stopAll(int releaseMs);
     void onNodeEnded(int nodeId);
 
     int getActiveVoiceCount() const noexcept;

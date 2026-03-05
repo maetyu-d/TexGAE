@@ -19,6 +19,7 @@ MainComponent::MainComponent(std::function<void()> createScene,
                              std::function<void(const juce::String&)> removeMapping,
                              std::function<std::vector<EventRule>()> getRulesFn,
                              std::function<std::vector<juce::String>()> getSynthDefsFn,
+                             std::function<std::map<juce::String, double>()> getRecentEventTimesFn,
                              std::function<void()> saveConfigFn,
                              std::function<void()> loadConfigFn)
     : onCreateScene(std::move(createScene)),
@@ -29,6 +30,7 @@ MainComponent::MainComponent(std::function<void()> createScene,
       onRemoveMapping(std::move(removeMapping)),
       getRules(std::move(getRulesFn)),
       getSynthDefs(std::move(getSynthDefsFn)),
+      getRecentEventTimes(std::move(getRecentEventTimesFn)),
       onSaveConfig(std::move(saveConfigFn)),
       onLoadConfig(std::move(loadConfigFn))
 {
@@ -52,12 +54,10 @@ MainComponent::MainComponent(std::function<void()> createScene,
     addAndMakeVisible(gain);
 
     createSceneButton.addListener(this);
-    spawnButton.addListener(this);
     stopButton.addListener(this);
     upsertButton.addListener(this);
     removeButton.addListener(this);
     addAndMakeVisible(createSceneButton);
-    addAndMakeVisible(spawnButton);
     addAndMakeVisible(stopButton);
 
     mappingHeader.setText("Event Mapping Table", juce::dontSendNotification);
@@ -67,6 +67,7 @@ MainComponent::MainComponent(std::function<void()> createScene,
     h.addColumn("On", colEnabled, 40);
     h.addColumn("Incoming Event", colIncoming, 140);
     h.addColumn("SynthDef", colSynth, 130);
+    h.addColumn("Rx", colRx, 40);
     h.addColumn("Test", colTest, 56);
     h.addColumn("Behavior", colBehavior, 110);
     h.addColumn("Gain", colGainScale, 70);
@@ -141,8 +142,6 @@ void MainComponent::resized()
     topControls.removeFromLeft(8);
     createSceneButton.setBounds(topControls.removeFromLeft(140));
     topControls.removeFromLeft(6);
-    spawnButton.setBounds(topControls.removeFromLeft(140));
-    topControls.removeFromLeft(6);
     stopButton.setBounds(topControls.removeFromLeft(120));
     r.removeFromTop(8);
 
@@ -186,16 +185,6 @@ void MainComponent::buttonClicked(juce::Button* button)
     {
         if (onCreateScene)
             onCreateScene();
-        return;
-    }
-
-    if (button == &spawnButton)
-    {
-        if (onSpawn)
-        {
-            const auto synth = (synthType.getSelectedId() == 2) ? juce::String("default") : juce::String("proc_hit");
-            onSpawn(synth, static_cast<float> (gain.getValue()));
-        }
         return;
     }
 
@@ -263,6 +252,9 @@ void MainComponent::timerCallback()
         targetSynth.setText(currentText.isNotEmpty() ? currentText : "proc_hit", juce::dontSendNotification);
     }
 
+    if (getRecentEventTimes)
+        recentEventTimesMs = getRecentEventTimes();
+
     refreshRules();
 }
 
@@ -289,6 +281,7 @@ void MainComponent::paintCell(juce::Graphics& g, int rowNumber, int columnId, in
     if (columnId == colEnabled) text = r.enabled ? "Y" : "N";
     if (columnId == colIncoming) text = r.incomingEvent;
     if (columnId == colSynth) text = r.synthDef;
+    if (columnId == colRx) text = "";
     if (columnId == colTest) text = "";
     if (columnId == colBehavior) text = behaviorName(r.behavior);
     if (columnId == colGainScale) text = juce::String(r.gainScale, 2);
@@ -302,6 +295,19 @@ void MainComponent::paintCell(juce::Graphics& g, int rowNumber, int columnId, in
 
     g.setColour(juce::Colours::white.withAlpha(0.08f));
     g.drawVerticalLine(width - 1, 0.0f, static_cast<float> (height));
+
+    if (columnId == colRx)
+    {
+        const auto nowMs = juce::Time::getMillisecondCounterHiRes();
+        const auto it = recentEventTimesMs.find(r.incomingEvent);
+        const bool isRecent = (it != recentEventTimesMs.end()) && ((nowMs - it->second) <= 400.0);
+        const auto dot = isRecent ? juce::Colours::limegreen : juce::Colours::dimgrey;
+        g.setColour(dot.withAlpha(isRecent ? 0.95f : 0.55f));
+        const float d = 10.0f;
+        const float x = (width - d) * 0.5f;
+        const float y = (height - d) * 0.5f;
+        g.fillEllipse(x, y, d, d);
+    }
 }
 
 juce::Component* MainComponent::refreshComponentForCell(int rowNumber,
